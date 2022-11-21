@@ -9,6 +9,7 @@ RUN useradd -m -s /bin/bash hyperion && chown -R hyperion:hyperion /hyperion-his
 USER hyperion
 WORKDIR /hyperion-history-api
 
+RUN rm -f package-lock.json
 RUN npm install
 
 EXPOSE 7001
