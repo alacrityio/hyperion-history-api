@@ -84,16 +84,16 @@ fi
 docker-compose start kibana
 
 # Starting eosio-node container
-docker-compose start eosio-node
-
+# docker-compose start eosio-node
+# 
 # Starting hyperion containers
-wait_for_container eosio-node 8888
-
-if [ $? -ne 0 ]
-then
-  echo "failed to wait for eosio-node"
-  exit 1
-fi
+# wait_for_container eosio-node 8888
+# 
+# if [ $? -ne 0 ]
+# then
+#   echo "failed to wait for eosio-node"
+#   exit 1
+# fi
 
 if [ "$snapshot" != "" ]
 then
