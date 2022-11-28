@@ -126,7 +126,7 @@ var Api = /** @class */ (function () {
             array: rawAbi,
         });
         if (!ser.supportedAbiVersion(buffer.getString())) {
-            throw new Error('Unsupported abi version');
+            throw new Error('Unsupported abi version nerddddddd!!!!!');
         }
         buffer.restartRead();
         return this.abiTypes.get('abi_def').deserialize(buffer);
