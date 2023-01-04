@@ -2,7 +2,7 @@ import {HyperionWorker} from "./hyperionWorker";
 import {Api} from "eosjs/dist";
 import {ApiResponse} from "@elastic/elasticsearch";
 import {cargo, queue} from 'async';
-import * as AbiEOS from "@eosrio/node-abieos";
+import * as AbiEOS from "node-abiala";
 import {Serialize} from "../addons/eosjs-native";
 import {Type} from "../addons/eosjs-native/eosjs-serialize";
 import {debugLog, hLog} from "../helpers/common_functions";
