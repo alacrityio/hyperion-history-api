@@ -250,7 +250,7 @@ export class HyperionMaster {
             'init_abi': (msg: any) => {
                 if (!this.cachedInitABI) {
                     this.cachedInitABI = msg.data;
-                    hLog('received ship abi for distribution');
+                    hLog('!!!!!!!!received ship abi for distribution');
                     messageAllWorkers(cluster, {
                         event: 'initialize_abi',
                         data: msg.data

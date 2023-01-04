@@ -10,7 +10,7 @@ import * as v8 from "v8";
 import {HeapInfo} from "v8";
 import {debugLog, hLog} from "../helpers/common_functions";
 import {StateHistorySocket} from "../connections/state-history";
-import * as AbiEOS from "node-abiala";
+import * as AbiEOS from "@eosrio/node-abieos";
 
 export abstract class HyperionWorker {
 

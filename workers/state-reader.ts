@@ -3,7 +3,7 @@ import {cargo, QueueObject} from "async";
 import {Serialize} from "../addons/eosjs-native";
 import {Type} from "eosjs/dist/eosjs-serialize";
 import {debugLog, deserialize, hLog, serialize} from "../helpers/common_functions";
-import * as AbiEOS from "node-abiala";
+import * as AbiEOS from "@eosrio/node-abieos";
 
 export default class StateReader extends HyperionWorker {
 
