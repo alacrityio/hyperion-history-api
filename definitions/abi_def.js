@@ -1,5 +1,5 @@
 const AbiDefinitions = {
-  version: 'alaio::abi/1.1',
+  version: 'eosio::abi/1.1',
   structs: [
     {
       name: 'extensions_entry',
@@ -193,7 +193,7 @@ const AbiDefinitions = {
 };
 
 const RexAbi = {
-  version: 'alaio::abi/1.1',
+  version: 'eosio::abi/1.1',
   types: [],
   structs: [
     {

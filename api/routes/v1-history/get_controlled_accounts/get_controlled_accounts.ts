@@ -20,7 +20,7 @@ async function getControlledAccounts(fastify: FastifyInstance, request: FastifyR
 						{
 							bool: {
 								must: [
-									{term: {"act.account": "eosio"}},
+									{term: {"act.account": "alaio"}},
 									{term: {"act.name": "newaccount"}},
 									{term: {"act.authorization.actor": controlling_account}}
 								]

@@ -41,12 +41,10 @@ import AlertsManager from "./alertsManager";
 import IORedis from "ioredis";
 import {IOConfig} from "@pm2/io/build/main/pmx";
 import Gauge from "@pm2/io/build/main/utils/metrics/gauge";
-import moment = require("moment");
-import Timeout = NodeJS.Timeout;
 
 import {bootstrap} from 'global-agent';
-
-bootstrap();
+import moment = require("moment");
+import Timeout = NodeJS.Timeout;
 
 interface RevBlock {
     num: number;
@@ -175,6 +173,11 @@ export class HyperionMaster {
     constructor() {
         this.cm = new ConfigurationModule();
         this.conf = this.cm.config;
+
+        if (this.conf.settings.use_global_agent) {
+            bootstrap();
+        }
+
         this.alerts = new AlertsManager(this.conf.alerts);
         this.manager = new ConnectionManager(this.cm);
         this.mLoader = new HyperionModuleLoader(this.cm);
@@ -234,6 +237,8 @@ export class HyperionMaster {
                         tx: msg.trx_ids
                     });
 
+                    this.lastProducedBlockNum = msg.block_num;
+
                     if (this.conf.settings.bp_monitoring && !this.conf.indexer.abi_scan_mode) {
                         this.liveBlockQueue.push(msg).catch(reason => {
                             hLog('Error handling consumed_block:', reason);
@@ -250,7 +255,7 @@ export class HyperionMaster {
             'init_abi': (msg: any) => {
                 if (!this.cachedInitABI) {
                     this.cachedInitABI = msg.data;
-                    hLog('!!!!!!!!received ship abi for distribution');
+                    hLog('received ship abi for distribution');
                     messageAllWorkers(cluster, {
                         event: 'initialize_abi',
                         data: msg.data
@@ -287,6 +292,16 @@ export class HyperionMaster {
                     this.total_range = this.head - msg.block_num;
                 }
             },
+            'kill_worker': (msg: any) => {
+                for (let workersKey in cluster.workers) {
+                    const w = cluster.workers[workersKey];
+                    if (w.id === parseInt(msg.id)) {
+                        const idx = this.workerMap.findIndex(value => value.worker_id === w.id);
+                        this.workerMap.splice(idx, 1);
+                        w.kill();
+                    }
+                }
+            },
             'completed': (msg: any) => {
                 if (msg.id === this.doctorId.toString()) {
                     hLog('repair worker completed', msg);
@@ -316,17 +331,38 @@ export class HyperionMaster {
                         if (end > this.head) {
                             end = this.head;
                         }
-                        this.lastAssignedBlock += this.maxBatchSize;
                         const def = {
                             first_block: start,
                             last_block: end
                         };
+                        this.lastAssignedBlock = def.last_block;
                         this.activeReadersCount++;
                         messageAllWorkers(cluster, {
                             event: 'new_range',
                             target: msg.id,
                             data: def
                         });
+                    } else {
+                        if (this.lastAssignedBlock >= this.head) {
+                            hLog(`Parallel readers finished the requested range`);
+                            const readers = this.workerMap.filter(value => value.worker_role === 'reader');
+                            this.workerMap = this.workerMap.filter(value => value.worker_role !== 'reader');
+                            readers.forEach(value => value.wref.kill());
+                            // for (let hyperionWorkerDef of this.workerMap) {
+                            //     if (hyperionWorkerDef.worker_role === 'reader') {
+                            //         hyperionWorkerDef.wref.kill();
+                            //     }
+                            // }
+                            // for (let workersKey in cluster.workers) {
+                            //     const w = cluster.workers[workersKey];
+                            //     console.log(w);
+                            //     if (w.id === parseInt(msg.id)) {
+                            //         const idx = this.workerMap.findIndex(value => value.worker_id === w.id);
+                            //         this.workerMap.splice(idx, 1);
+                            //         w.kill();
+                            //     }
+                            // }
+                        }
                     }
                 }
             },
@@ -645,7 +681,7 @@ export class HyperionMaster {
                             index: new_index
                         });
                     } catch (e) {
-                        console.log(e);
+                        hLog(e);
                         process.exit(1);
                     }
 
@@ -657,7 +693,7 @@ export class HyperionMaster {
                             name: `${queue_prefix}-${index.type}`
                         });
                     } catch (e) {
-                        console.log(e);
+                        hLog(e);
                         process.exit(1);
                     }
 
@@ -1451,6 +1487,12 @@ export class HyperionMaster {
                 avg_consume_rate = consume_rate;
             }
             const log_msg = [];
+
+            // print current head for live reading
+            if (this.lastProducedBlockNum > 0) {
+                log_msg.push(`#${this.lastProducedBlockNum}`);
+            }
+
             log_msg.push(`W:${_workers}`);
 
             const _r = (this.pushedBlocks + this.livePushedBlocks) / tScale;
@@ -1474,9 +1516,12 @@ export class HyperionMaster {
             this.metrics.indexingRate?.set(_ir);
 
             if (this.total_blocks < this.total_range && !this.conf.indexer.live_only_mode) {
-                const remaining = this.total_range - this.total_blocks;
-                const estimated_time = Math.round(remaining / avg_consume_rate);
-                const time_string = moment().add(estimated_time, 'seconds').fromNow(false);
+                let time_string = 'waiting for indexer';
+                if (avg_consume_rate > 0) {
+                    const remaining = this.total_range - this.total_blocks;
+                    const estimated_time = Math.round(remaining / avg_consume_rate);
+                    time_string = moment().add(estimated_time, 'seconds').fromNow(false);
+                }
                 const pct_parsed = ((this.total_blocks / this.total_range) * 100).toFixed(1);
                 const pct_read = ((this.total_read / this.total_range) * 100).toFixed(1);
                 log_msg.push(`${this.total_blocks}/${this.total_read}/${this.total_range}`);
@@ -1500,7 +1545,11 @@ export class HyperionMaster {
                 hLog(log_msg.join(' | '));
             }
 
-            if (this.indexedObjects === 0 && this.deserializedActions === 0 && this.consumedBlocks === 0 && !this.mode_transition) {
+            if (this.liveConsumedBlocks > 0 && this.consumedBlocks === 0 && this.conf.indexer.abi_scan_mode) {
+                hLog('Warning: Live reading on ABI SCAN mode')
+            }
+
+            if (this.liveConsumedBlocks + this.indexedObjects + this.deserializedActions + this.consumedBlocks === 0 && !this.mode_transition) {
 
                 // Report completed range (parallel reading)
                 if (this.total_blocks === this.total_range && !this.range_completed) {
@@ -1549,6 +1598,13 @@ export class HyperionMaster {
                             }
                         } else {
                             if (!this.shutdownStarted) {
+                                const readers = this.workerMap.filter(value => {
+                                    return value.worker_role === 'reader' || value.worker_role === 'continuous_reader';
+                                });
+                                if (readers.length === 0) {
+                                    hLog(`No more active workers, stopping now...`);
+                                    process.exit();
+                                }
                                 const idleMsg = 'No blocks are being processed, please check your state-history node!';
                                 if (this.idle_count === 2) {
                                     this.emitAlert('warning', idleMsg);
@@ -1715,7 +1771,16 @@ export class HyperionMaster {
         this.ioRedisClient = new IORedis(this.manager.conn.redis);
 
         // Remove first indexed block from cache (v2/health)
-        await this.ioRedisClient.del(`${this.manager.chain}::fib`)
+        await this.ioRedisClient.del(`${this.manager.chain}::fib`);
+
+        // check nodeos
+        try {
+            const info = await this.rpc.get_info();
+            hLog(`Nodeos version: ${info.server_version_string}`);
+        } catch (e) {
+            hLog(`Chain API Error: ${e.message}`);
+            process.exit();
+        }
 
         // Elasticsearch
         this.client = this.manager.elasticsearchClient;
@@ -1724,6 +1789,7 @@ export class HyperionMaster {
             hLog(`Elasticsearch: ${esInfo.body.version.number} | Lucene: ${esInfo.body.version.lucene_version}`);
             this.emitAlert('info', `Indexer started using ES v${esInfo.body.version.number}`);
         } catch (e) {
+            console.log(e.message);
             hLog('Failed to check elasticsearch version!');
             process.exit();
         }
@@ -1821,9 +1887,9 @@ export class HyperionMaster {
         // handle worker disconnection events
         cluster.on('disconnect', (worker) => {
             if (!this.mode_transition && !this.shutdownStarted) {
-                hLog(`The worker #${worker.id} has disconnected, attempting to re-launch in 5 seconds...`);
                 const workerReference = this.workerMap.find(value => value.worker_id === worker.id);
                 if (workerReference) {
+                    hLog(`The worker #${worker.id} has disconnected, attempting to re-launch in 5 seconds...`);
                     workerReference.wref = null;
                     workerReference.failures++;
                     hLog(`New worker defined: ${workerReference.worker_role} for ${workerReference.worker_queue}`);
@@ -1839,7 +1905,7 @@ export class HyperionMaster {
                         }, 1000);
                     }, 5000);
                 } else {
-                    console.log(`Worker #${worker.id} not found in map!`);
+                    hLog(`The worker #${worker.id} has disconnected`);
                 }
             }
         });
@@ -2215,9 +2281,7 @@ export class HyperionMaster {
         await this.setupIndexers();
         await this.setupStreaming();
         await this.setupDSPool();
-        this.addWorker({
-            worker_role: "delta_updater"
-        });
+        this.addWorker({worker_role: "delta_updater"});
     }
 
     private async findRange() {
@@ -2243,8 +2307,7 @@ export class HyperionMaster {
         try {
             this.chain_data = await this.rpc.get_info();
         } catch (e) {
-            console.log(e.message);
-            console.error('failed to connect to chain api');
+            hLog('Failed to connect to chain api: ' + e.message);
             process.exit(1);
         }
         this.head = this.chain_data.head_block_num;
@@ -2346,7 +2409,10 @@ export class HyperionMaster {
         });
     }
 
-    async requestDataFromWorkers(requestEvent: { event: string, data?: any }, responseEventType: string, timeoutSec: number = 1000) {
+    async requestDataFromWorkers(requestEvent: {
+        event: string,
+        data?: any
+    }, responseEventType: string, timeoutSec: number = 1000) {
         const requests = [];
         for (const id in cluster.workers) {
             if (cluster.workers.hasOwnProperty(id)) {

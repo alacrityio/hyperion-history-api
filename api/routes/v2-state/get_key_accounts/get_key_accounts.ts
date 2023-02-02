@@ -27,9 +27,8 @@ async function getKeyAccounts(fastify: FastifyInstance, request: FastifyRequest)
 
 	if (public_Key.startsWith("PUB_")) {
 		publicKey = public_Key;
-	} else if (public_Key.startsWith("ALA")) {
+	} else if (public_Key.startsWith("EOS")) {
 		try {
-			publicKey = "EOS" + public_Key.substring(3);
 			publicKey = Numeric.convertLegacyPublicKey(public_Key);
 		} catch (e) {
 			console.log(e.message);

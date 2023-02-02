@@ -367,7 +367,8 @@ function bigint2Milliseconds(input: bigint) {
 
 const defaultRouteCacheMap = {
     get_resource_usage: 3600,
-    get_creator: 3600 * 24
+    get_creator: 3600 * 24,
+    health: 10
 }
 
 export async function timedQuery(
@@ -577,7 +578,7 @@ export function addSharedSchemas(fastify: FastifyInstance) {
             {
                 "type": "string",
                 "description": "String representation of privileged EOSIO name type",
-                "pattern": "^(eosio[\\.][a-z1-5]{1,6})([a-j]{1})?$",
+                "pattern": "^(alaio[\\.][a-z1-5]{1,6})([a-j]{1})?$",
                 "title": "NamePrivileged"
             },
             {

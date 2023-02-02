@@ -4,7 +4,7 @@ import {Server, Socket} from "socket.io";
 import {checkFilter, hLog} from "../helpers/common_functions";
 import {createServer} from "http";
 
-const greylist = ['eosio.token'];
+const greylist = ['alaio.token'];
 
 export default class WSRouter extends HyperionWorker {
 
