@@ -1,6 +1,6 @@
 {
   "name": "hyperion-history",
-  "version": "3.3.9-7",
+  "version": "alaio-3.3.9-7",
   "description": "Scalable Full History API Solution for EOSIO based blockchains",
   "main": "launcher.js",
   "scripts": {
@@ -27,7 +27,7 @@
   "license": "MIT",
   "dependencies": {
     "@elastic/elasticsearch": "^7.17.0",
-    "@eosrio/node-abieos": "2.1.1",
+    "node-abiala": "git+https://github.com/alacrityio/node-abiala",
     "@fastify/autoload": "4.0.1",
     "@fastify/cors": "7.0.0",
     "@fastify/formbody": "^6.0.1",
@@ -41,6 +41,7 @@
     "cli-progress": "^3.12.0",
     "commander": "^8.3.0",
     "cross-fetch": "^3.1.5",
+    "alaiojs": "^20.0.3",
     "eosjs": "^22.1.0",
     "fast-json-stringify": "2.7.13",
     "fastify": "3.29.4",

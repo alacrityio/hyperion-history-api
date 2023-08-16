@@ -46,11 +46,11 @@ export class ConfigurationModule {
 			this.config.indexer.fetch_block = false;
 		}
 
-		this.EOSIO_ALIAS = 'eosio';
+		this.EOSIO_ALIAS = 'alaio';
 		if (this.config.settings.eosio_alias) {
 			this.EOSIO_ALIAS = this.config.settings.eosio_alias;
 		} else {
-			this.config.settings.eosio_alias = 'eosio';
+			this.config.settings.eosio_alias = 'alaio';
 		}
 
 		// append default blacklists (eosio::onblock & eosio.null)

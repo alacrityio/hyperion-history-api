@@ -745,7 +745,7 @@ export function addSharedSchemas(fastify: FastifyInstance) {
             {
                 "type": "string",
                 "description": "String representation of privileged EOSIO name type",
-                "pattern": "^(eosio[\\.][a-z1-5]{1,6})([a-j]{1})?$",
+                "pattern": "^(alaio[\\.][a-z1-5]{1,6})([a-j]{1})?$",
                 "title": "NamePrivileged"
             },
             {

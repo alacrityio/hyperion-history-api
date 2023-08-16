@@ -1,6 +1,6 @@
 import {FastifyInstance, FastifyReply, FastifyRequest} from "fastify";
 import {timedQuery} from "../../../helpers/functions";
-import {Numeric} from "eosjs/dist";
+import {Numeric} from "alaiojs/dist";
 import {getSkipLimit} from "../../v2-history/get_actions/functions";
 
 function invalidKey() {
@@ -27,7 +27,7 @@ async function getKeyAccounts(fastify: FastifyInstance, request: FastifyRequest)
 
 	if (public_Key.startsWith("PUB_")) {
 		publicKey = public_Key;
-	} else if (public_Key.startsWith("EOS")) {
+	} else if (public_Key.startsWith("ALA")) {
 		try {
 			publicKey = Numeric.convertLegacyPublicKey(public_Key);
 		} catch (e) {

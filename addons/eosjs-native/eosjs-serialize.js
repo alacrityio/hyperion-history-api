@@ -437,7 +437,7 @@ var SerialBuffer = /** @class */ (function () {
 exports.SerialBuffer = SerialBuffer;
 /** Is this a supported ABI version? */
 function supportedAbiVersion(version) {
-    return version.startsWith('eosio::abi/1.');
+    return version.startsWith('alaio::abi/1.');
 }
 exports.supportedAbiVersion = supportedAbiVersion;
 function checkDateParse(date) {
