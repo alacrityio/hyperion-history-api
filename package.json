@@ -27,7 +27,7 @@
   "license": "MIT",
   "dependencies": {
     "@elastic/elasticsearch": "^7.17.0",
-    "node-abiala": "git+https://github.com/alacrityio/node-abiala",
+    "node-abiala": "git+https://github.com/alacrityio/node-abiala#alaio-2.1.1",
     "@fastify/autoload": "4.0.1",
     "@fastify/cors": "7.0.0",
     "@fastify/formbody": "^6.0.1",
