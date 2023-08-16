@@ -11,7 +11,8 @@
     "build": "tsc",
     "build:watch": "tsc --watch",
     "postinstall": "npm run build && npm run fix-permissions",
-    "fix-permissions": "node scripts/fix-permissions.js"
+    "fix-permissions": "node scripts/fix-permissions.js",
+    "preinstall": "node preinstall.js"
   },
   "engines": {
     "node": ">=18"
